@@ -14,6 +14,10 @@
  */
 class oxModuleStateFixer extends oxModuleInstaller
 {
+    /** @var oxIOutput $_debugOutput */
+    protected $_debugOutput;
+
+
     /**
      * Fix module states task runs version, extend, files, templates, blocks,
      * settings and events information fix tasks
@@ -33,7 +37,6 @@ class oxModuleStateFixer extends oxModuleInstaller
         $this->_deleteTemplateFiles($sModuleId);
         $this->_deleteModuleFiles($sModuleId);
         $this->_deleteModuleEvents($sModuleId);
-        $this->_deleteModuleVersions($sModuleId);
 
         $this->_addExtensions($oModule);
 
@@ -47,5 +50,46 @@ class oxModuleStateFixer extends oxModuleInstaller
         /** @var oxModuleCache $oModuleCache */
         $oModuleCache = oxNew('oxModuleCache', $oModule);
         $oModuleCache->resetCache();
+    }
+
+    public function setDebugOutput(oxIOutput $o)
+    {
+        $this->_debugOutput = $o;
+    }
+
+    /**
+     * Add extension to module
+     * overriden to have the ability to save config only when needed
+     * and the output that info
+     * @param oxModule $oModule
+     */
+    protected function _addExtensions(oxModule $oModule)
+    {
+        $aModulesDefault = $this->getConfig()->getConfigParam('aModules');
+        $aModules = $this->getModulesWithExtendedClass();
+        $aModules = $this->_removeNotUsedExtensions($aModules, $oModule);
+
+
+        if ($oModule->hasExtendClass()) {
+            $aAddModules = $oModule->getExtensions();
+            $aModules = $this->_mergeModuleArrays($aModules, $aAddModules);
+        }
+
+        $aModules = $this->buildModuleChains($aModules);
+        if ($aModulesDefault != $aModules) {
+            $result=array_diff($aModules,$aModulesDefault);
+            if ($this->_debugOutput) {
+                $this->_debugOutput->writeLn("[INFO] fixing " . $oModule->getId());
+            }
+            $this->_saveToConfig('aModules', $aModules);
+        }
+    }
+
+    protected function _removeGarbage($aInstalledExtensions, $aGarbage)
+    {
+        if ($this->_debugOutput) {
+            $this->_debugOutput->writeLn("[INFO] removing garbage: " . join(',', $aGarbage));
+        }
+        parent::_removeGarbage($aInstalledExtensions, $aGarbage);
     }
 }
