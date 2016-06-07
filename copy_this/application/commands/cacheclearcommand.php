@@ -49,11 +49,14 @@ class CacheClearCommand extends oxConsoleCommand
     {
         $oInput = $this->getInput();
 
-        $oOutput->writeLn('Clearing OXID db and backend cache..');
-        /** @var oxCache $oCache */
-        $oCache = oxNew('oxcache');
-        $oCache->reset(false);
-        $oOutput->writeLn('Oxid Cache cleared successfully');
+        if (oxRegistry::getConfig()->getEdition() == 'EE')
+        {
+	        $oOutput->writeLn('Clearing OXID db and backend cache..');
+	        /** @var oxCache $oCache */
+	        $oCache = oxNew('oxcache');
+	        $oCache->reset(false);
+	        $oOutput->writeLn('Oxid Cache cleared successfully');
+        }
 
 
         $sTmpDir = $this->_appendDirectorySeparator(oxRegistry::getConfig()->getConfigParam('sCompileDir'));
